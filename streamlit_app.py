@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 import easyocr
 import re
+import numpy as np
 
 st.set_page_config(page_title="행정인턴 어르신 도우미", layout="centered")
 st.title("📋 행정인턴 업무 자동화 어르신 도우미")
@@ -19,10 +20,11 @@ if uploaded_file:
 
     with st.spinner("🔍 텍스트 인식 중..."):
         reader = easyocr.Reader(['ko', 'en'], gpu=False)
-        result = reader.readtext(image)
+        image_np = np.array(image)  # <== 핵심 수정
+        result = reader.readtext(image_np)
         text = "\n".join([item[1] for item in result])
 
-    # 이름 추출 개선
+    # 이름, 주민번호 추출
     name_match = re.search(r"주민등록증\s*\n*([가-힣]{2,4})", text) or re.search(r"([가-힣]{2,4})", text)
     resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
 
@@ -44,7 +46,7 @@ if uploaded_file:
 
         with col2:
             st.markdown("""
-            ### 👉🏻 다음 단계 안내:
+            ### ✅ 다음 단계 안내:
             - PASS 본인인증 페이지 열기  
             - 복사한 정보들을 해당 칸에 붙여넣기  
             - 휴대폰 번호는 직접 입력  
