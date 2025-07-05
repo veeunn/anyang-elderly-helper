@@ -6,15 +6,16 @@ from streamlit.components.v1 import html
 import numpy as np
 
 # ✅ 클립보드 복사 버튼 함수 (JS 기반)
+from streamlit.components.v1 import html
+
 def copy_to_clipboard_js(text, key):
     escaped_text = text.replace("'", "\\'")
     html(f"""
-    <div style="margin-top: 4px;">
-        <button onclick="navigator.clipboard.writeText('{escaped_text}'); alert('{escaped_text} 복사 완료!');">
-            📋 복사
-        </button>
-    </div>
-    """, height=40, key=key)
+    <button style="margin-top:4px;" onclick="navigator.clipboard.writeText('{escaped_text}'); alert('{escaped_text} 복사 완료!');">
+        📋 복사
+    </button>
+    """, key=key, unsafe_allow_html=True)
+
 
 # ✅ OCR Reader 초기화
 reader = easyocr.Reader(['ko', 'en'])
