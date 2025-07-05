@@ -1,8 +1,7 @@
 import streamlit as st
 from PIL import Image
-import pytesseract
 import re
-import base64
+import easyocr
 
 st.set_page_config(page_title="행정인턴 어르신 도우미", layout="centered")
 st.title("📋 행정인턴 업무 자동화 어르신 도우미")
@@ -16,16 +15,18 @@ uploaded_file = st.file_uploader("📷 신분증 사진을 업로드하세요 (�
 
 if uploaded_file:
     image = Image.open(uploaded_file)
-    st.image(image, caption="업로드한 신분증", use_column_width=True)
+    st.image(image, caption="업로드한 신분증", use_container_width=True)
 
     with st.spinner("🔍 텍스트 인식 중..."):
-        text = pytesseract.image_to_string(image, lang="kor+eng")
+        reader = easyocr.Reader(['ko', 'en'])
+        result = reader.readtext(image)
+        text = "\n".join([item[1] for item in result])
 
-    name_match = re.search(r"([가-힣]{2,4})", text)
+    name_match = re.search(r"[가-힣]{2,4}", text)
     resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
 
     if name_match and resno_match:
-        name = name_match.group(1)
+        name = name_match.group(0)
         birth = resno_match.group(1)
         gender_code = resno_match.group(2)[0]
 
@@ -52,5 +53,5 @@ if uploaded_file:
 
 st.markdown("---")
 st.markdown("""
-💡 만든 사람: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))  
+ⓒ @veeunn(https://github.com/veeunn))  
 """)
