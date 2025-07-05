@@ -65,7 +65,7 @@ if uploaded_file:
         st.code(address if address else "주소 인식 실패")
 
         st.markdown("---")
-        st.markdown("### ✅ 다음 단계 안내")
+        st.markdown("### 👉🏻 다음 단계 안내")
         st.markdown("""
         - PASS 본인인증 페이지 열기  
         - 복사한 정보들을 붙여넣기  
@@ -73,3 +73,8 @@ if uploaded_file:
         """)
     else:
         st.error("❌ 인식 실패: 이름 또는 주민번호를 인식하지 못했습니다.")
+
+st.markdown("---")
+st.markdown("""
+Made by: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))  
+""")
