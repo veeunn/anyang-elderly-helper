@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 import re
 import easyocr
+import numpy as np  # ✅ easyocr가 요구하는 형식으로 변환하기 위해 필요
 
 st.set_page_config(page_title="행정인턴 어르신 도우미", layout="centered")
 st.title("📋 행정인턴 업무 자동화 어르신 도우미")
@@ -19,9 +20,13 @@ if uploaded_file:
 
     with st.spinner("🔍 텍스트 인식 중..."):
         reader = easyocr.Reader(['ko', 'en'])
-        result = reader.readtext(image)
+        image_np = np.array(image)  # ✅ easyocr가 요구하는 numpy 형식으로 변환
+        result = reader.readtext(image_np)
+
+        # 추출된 텍스트를 줄 단위로 합치기
         text = "\n".join([item[1] for item in result])
 
+    # 이름 및 주민번호 패턴 찾기
     name_match = re.search(r"[가-힣]{2,4}", text)
     resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
 
@@ -53,5 +58,5 @@ if uploaded_file:
 
 st.markdown("---")
 st.markdown("""
-ⓒ @veeunn(https://github.com/veeunn))  
+ⓒveeunn)  
 """)
