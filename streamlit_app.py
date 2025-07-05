@@ -55,22 +55,22 @@ if uploaded_file:
         with col1:
             st.markdown("### 🧑 이름")
             st.code(name, language="text")
-            st.button("📋 복사", key="copy_name", on_click=lambda: st.toast("이름 복사 완료"))
+
 
         with col2:
             st.markdown("### 🎂 생년월일")
             st.code(birth, language="text")
-            st.button("📋 복사", key="copy_birth", on_click=lambda: st.toast("생년월일 복사 완료"))
+   
 
         with col3:
             st.markdown("### 🚻 성별코드")
             st.code(gender_code, language="text")
-            st.button("📋 복사", key="copy_gender", on_click=lambda: st.toast("성별코드 복사 완료"))
+
 
         if address:
             st.markdown("### 🏠 주소")
             st.code(address, language="text")
-            st.button("📋 복사", key="copy_address", on_click=lambda: st.toast("주소 복사 완료"))
+
         else:
             st.warning("⚠️ 주소를 인식하지 못했습니다. 사진을 다시 확인해주세요.")
 
