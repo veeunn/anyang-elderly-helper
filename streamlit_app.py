@@ -92,5 +92,5 @@ if uploaded_file:
     else:
         st.error("❌ 이름 또는 주민번호 인식 실패! 사진 선명도를 확인해주세요.")
 
-    st.markdown("---")
-    st.markdown("Made by: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))")
+st.markdown("---")
+st.markdown("Made by: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))")
