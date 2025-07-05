@@ -2,8 +2,7 @@ import streamlit as st
 from PIL import Image
 import easyocr
 import re
-import io
-import base64
+import numpy as np
 
 # 페이지 설정
 st.set_page_config(page_title="행정인턴 어르신 도우미", layout="centered")
@@ -22,10 +21,10 @@ if uploaded_file:
 
     with st.spinner("🔍 텍스트 인식 중..."):
         reader = easyocr.Reader(['ko', 'en'])
-        result = reader.readtext(image)
+        result = reader.readtext(np.array(image))
         text = "\n".join([item[1] for item in result])
 
-    # 이름 필터링 (주민 등 제외)
+    # 이름 추출 (불필요 단어 제외)
     name_candidates = re.findall(r"[가-힣]{2,4}", text)
     name = ""
     for cand in name_candidates:
@@ -62,16 +61,14 @@ if uploaded_file:
         st.markdown("---")
         st.markdown("""
         ### ✅ 다음 단계 안내:
-        - PASS 본인인증 페이지 열기
-        - 복사한 정보들을 해당 칸에 붙여넣기
+        - PASS 본인인증 페이지 열기  
+        - 복사한 정보들을 해당 칸에 붙여넣기  
         - 휴대폰 번호는 직접 입력
         """)
-
     else:
         st.error("❌ 이름이나 주민등록번호 인식 실패! 사진을 다시 찍거나 선명도를 확인해주세요.")
 
 st.markdown("---")
 st.markdown("""
-💡 만든 사람: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))  
+Made by 황예은 (GitHub: [@veeunn](https://github.com/veeunn))  
 """)
-
