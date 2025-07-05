@@ -1,82 +1,96 @@
 import streamlit as st
-from PIL import Image
 import easyocr
-import re
-from streamlit.components.v1 import html
 import numpy as np
-
-# ✅ 클립보드 복사 버튼 함수 (JS 기반)
+from PIL import Image
 from streamlit.components.v1 import html
 
-def copy_to_clipboard_js(text, key):
-    escaped_text = text.replace("'", "\\'")
-    html(f"""
-    <button style="margin-top:4px;" onclick="navigator.clipboard.writeText('{escaped_text}'); alert('{escaped_text} 복사 완료!');">
-        📋 복사
-    </button>
-    """, key=key, unsafe_allow_html=True)
+# EasyOCR Reader 초기화
+reader = easyocr.Reader(['ko'], gpu=False)
 
-
-# ✅ OCR Reader 초기화
-reader = easyocr.Reader(['ko', 'en'])
-
-# ✅ 페이지 설정
-st.set_page_config(page_title="행정인턴 어르신 도우미", layout="centered")
 st.title("📋 행정인턴 업무 자동화 어르신 도우미")
+st.write("이 도구는 어르신의 신분증 사진에서 이름, 생년월일, 성별코드(1 또는 2)를 자동으로 추출하여, 안양시청 PASS 본인인증 페이지에 빠르게 붙여넣을 수 있도록 도와줍니다.")
 
-st.markdown("""
-이 도구는 어르신의 신분증 사진에서 **이름, 생년월일, 성별코드(1 또는 2)** 를 자동으로 추출하여  
-**안양시청 PASS 본인인증 페이지**에 빠르게 붙여넣을 수 있도록 도와줍니다.
-""")
-
-# ✅ 파일 업로더
 uploaded_file = st.file_uploader("📷 신분증 사진을 업로드하세요 (주민등록증, 운전면허증 등)", type=["png", "jpg", "jpeg"])
 
+# 복사 버튼 함수
+def copy_to_clipboard_js(text, key):
+    html(f"""
+        <div style="margin-top: 4px;">
+            <button onclick="navigator.clipboard.writeText('{text}')"
+                    style="padding:4px 10px;border-radius:6px;background:#f0f2f6;border:none;cursor:pointer;">
+                📋 복사
+            </button>
+        </div>
+    """, height=40, key=key)
+
+# 신분증 종류 탐지 함수
+def detect_card_type(texts):
+    full_text = " ".join([t[1] for t in texts])
+    if '주민등록증' in full_text:
+        return '주민등록증'
+    elif '운전면허' in full_text or 'Driver' in full_text:
+        return '운전면허증'
+    else:
+        return '알 수 없음'
+
+# 이름, 생년월일, 성별코드 추출
+def extract_info(texts):
+    full_text = " ".join([t[1] for t in texts])
+    lines = [t[1] for t in texts]
+
+    # 이름: 한글 2~4글자 (운전면허증에선 생년월일 위에)
+    name = ""
+    for i, line in enumerate(lines):
+        if any(char.isdigit() for char in line) and '-' in line:
+            if i > 0:
+                name = lines[i - 1].strip()
+            break
+
+    # 생년월일 + 성별코드: 6자리 + 하이픈 + 1자리 이상 숫자
+    id_number = ""
+    for line in lines:
+        if '-' in line:
+            parts = line.split('-')
+            if len(parts[0]) == 6 and parts[0].isdigit() and parts[1][0].isdigit():
+                id_number = line
+                break
+
+    birth = id_number.split('-')[0] if id_number else ""
+    gender = id_number.split('-')[1][0] if id_number and '-' in id_number else ""
+
+    return name, birth, gender
+
 if uploaded_file:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="업로드한 신분증", use_column_width=True)
+    try:
+        image = Image.open(uploaded_file).convert("RGB")
+        image_np = np.array(image)
 
-    with st.spinner("🔍 텍스트 인식 중..."):
-        image_array = np.array(image)
-        result = reader.readtext(image_array)
-
-    text = "\n".join([item[1] for item in result])
-
-    name_match = re.search(r"([가-힣]{2,4})", text)
-    resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
-
-    if name_match and resno_match:
-        name = name_match.group(1)
-        birth = resno_match.group(1)
-        gender_code = resno_match.group(2)[0]
+        st.image(image, caption="업로드한 신분증", use_container_width=True)
+        with st.spinner("🔍 텍스트 인식 중..."):
+            result = reader.readtext(image_np)
 
         st.success("✅ 인식 완료!")
 
-        # 🔹 이름
+        card_type = detect_card_type(result)
+        st.markdown(f"📄 **신분증 종류:** {card_type}")
+
+        name, birth, gender = extract_info(result)
+
         st.markdown("### 🧑 이름")
-        st.code(name, language="text")
+        st.write(name)
         copy_to_clipboard_js(name, key="copy_name")
 
-        # 🔹 생년월일
         st.markdown("### 🎂 생년월일")
-        st.code(birth, language="text")
+        st.write(birth)
         copy_to_clipboard_js(birth, key="copy_birth")
 
-        # 🔹 성별코드
-        st.markdown("### 🚻 성별 코드")
-        st.code(gender_code, language="text")
-        copy_to_clipboard_js(gender_code, key="copy_gender")
+        st.markdown("### 🚻 성별코드")
+        st.write(gender)
+        copy_to_clipboard_js(gender, key="copy_gender")
 
-        st.markdown("---")
-        st.markdown("""
-        ### ✅ 다음 단계 안내:
-        - PASS 본인인증 페이지 열기  
-        - 복사한 정보들을 해당 칸에 붙여넣기  
-        - 휴대폰 번호는 직접 입력
-        """)
+    except Exception as e:
+        st.error(f"❌ 오류 발생: {str(e)}")
 
-    else:
-        st.error("❌ 이름이나 주민등록번호 인식 실패! 사진을 다시 찍거나 선명도를 확인해주세요.")
 
 # 👤 제작자 정보
 st.markdown("---")
