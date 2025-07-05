@@ -12,7 +12,7 @@ st.write("이 도구는 어르신의 신분증 사진에서 이름, 생년월일
 
 uploaded_file = st.file_uploader("📷 신분증 사진을 업로드하세요 (주민등록증, 운전면허증 등)", type=["png", "jpg", "jpeg"])
 
-# 복사 버튼 함수
+# 복사 버튼 함수 (JS 기반)
 def copy_to_clipboard_js(text, key):
     html(f"""
         <div style="margin-top: 4px;">
@@ -21,7 +21,7 @@ def copy_to_clipboard_js(text, key):
                 📋 복사
             </button>
         </div>
-    """, height=40, key=key)
+    """, key=key)
 
 # 신분증 종류 탐지 함수
 def detect_card_type(texts):
@@ -33,33 +33,28 @@ def detect_card_type(texts):
     else:
         return '알 수 없음'
 
-# 이름, 생년월일, 성별코드 추출
+# 이름, 생년월일, 성별코드 추출 함수
 def extract_info(texts):
-    full_text = " ".join([t[1] for t in texts])
     lines = [t[1] for t in texts]
-
-    # 이름: 한글 2~4글자 (운전면허증에선 생년월일 위에)
     name = ""
-    for i, line in enumerate(lines):
-        if any(char.isdigit() for char in line) and '-' in line:
-            if i > 0:
-                name = lines[i - 1].strip()
-            break
-
-    # 생년월일 + 성별코드: 6자리 + 하이픈 + 1자리 이상 숫자
     id_number = ""
-    for line in lines:
+
+    for i, line in enumerate(lines):
+        # 주민번호 탐색
         if '-' in line:
             parts = line.split('-')
-            if len(parts[0]) == 6 and parts[0].isdigit() and parts[1][0].isdigit():
-                id_number = line
+            if len(parts) == 2 and len(parts[0]) == 6 and parts[0].isdigit():
+                id_number = line.strip()
+                if i > 0:
+                    name = lines[i - 1].strip()
                 break
 
     birth = id_number.split('-')[0] if id_number else ""
-    gender = id_number.split('-')[1][0] if id_number and '-' in id_number else ""
+    gender = id_number.split('-')[1][0] if id_number else ""
 
     return name, birth, gender
 
+# 메인 실행
 if uploaded_file:
     try:
         image = Image.open(uploaded_file).convert("RGB")
@@ -90,7 +85,6 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"❌ 오류 발생: {str(e)}")
-
 
 # 👤 제작자 정보
 st.markdown("---")
