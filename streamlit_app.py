@@ -8,7 +8,7 @@ st.set_page_config(page_title="행정인턴 어르신 도우미", layout="center
 st.title("📋 행정인턴 업무 자동화 어르신 도우미")
 
 st.markdown("""
-이 도구는 어르신의 신분증 사진에서 **이름, 생년월일, 성별코드(1 또는 2)** 를 자동으로 추출하여,
+이 도구는 어르신의 신분증 사진에서 **이름, 생년월일, 성별코드(1 또는 2)** 를 자동으로 추출하여,  
 **안양시청 PASS 본인인증 페이지**에 빠르게 붙여넣을 수 있도록 도와줍니다.
 """)
 
@@ -17,58 +17,47 @@ uploaded_file = st.file_uploader("📷 신분증 사진을 업로드하세요 (�
 if uploaded_file:
     image = Image.open(uploaded_file)
     st.image(image, caption="업로드한 신분증", use_container_width=True)
-    image_np = np.array(image)
 
     with st.spinner("🔍 텍스트 인식 중..."):
-        reader = easyocr.Reader(['ko', 'en'], gpu=False)
-        result = reader.readtext(image_np)
+        np_image = np.array(image)
+        reader = easyocr.Reader(['ko', 'en'])
+        result = reader.readtext(np_image)
+
+        # 텍스트만 추출
         text = "\n".join([item[1] for item in result])
 
-    # ✅ 이름 추출
-    lines = text.split("\n")
-    name = None
-    for i, line in enumerate(lines):
-        if "주민등록증" in line or "운전면허증" in line:
-            for j in range(i + 1, min(i + 4, len(lines))):
-                candidate = lines[j].strip()
-                if re.fullmatch(r"[가-힣]{2,4}", candidate):
-                    name = candidate
-                    break
-            break
+        name_match = re.search(r"\b[가-힣]{2,4}\b", text)
+        resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
 
-    # ✅ 생년월일 및 성별 코드 추출
-    resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
+        if name_match and resno_match:
+            name = name_match.group(0)
+            birth = resno_match.group(1)
+            gender_code = resno_match.group(2)[0]
 
-    if name and resno_match:
-        birth = resno_match.group(1)
-        gender_code = resno_match.group(2)[0]
+            st.success("✅ 인식 완료!")
 
-        st.success("✅ 정보 추출 성공!")
-
-        # 복사 UI
-        def copy_value(label, value, key):
-            col1, col2 = st.columns([4, 1])
+            col1, col2, col3 = st.columns(3)
             with col1:
-                st.text_input(label, value=value, key=key)
+                st.text_input("🧑 이름", value=name, key="name_field")
+                st.button("📋 복사", on_click=lambda: st.toast("이름 복사 완료"))
+
             with col2:
-                if st.button(f"📋 복사", key=f"copy_{key}"):
-                    st.toast(f"{label} 복사됨: {value}", icon="✅")
+                st.text_input("🎂 생년월일", value=birth, key="birth_field")
+                st.button("📋 복사", on_click=lambda: st.toast("생년월일 복사 완료"))
 
-        copy_value("🧾 이름", name, "name")
-        copy_value("📅 생년월일", birth, "birth")
-        copy_value("⚧ 성별코드", gender_code, "gender")
+            with col3:
+                st.text_input("🚻 성별 코드", value=gender_code, key="gender_field")
+                st.button("📋 복사", on_click=lambda: st.toast("성별 코드 복사 완료"))
 
-        st.markdown("""
-        ### ✅ 다음 단계 안내
-        1. [PASS 본인인증 페이지](https://www.kmcert.com/kmcis/web_v5/kmcisHp00.jsp) 열기  
-        2. 위의 정보를 복사해서 붙여넣기  
-        3. 휴대폰 번호, 인증번호는 직접 입력  
-        """)
-    else:
-        st.error("❌ 이름이나 주민등록번호 인식 실패! 사진을 다시 찍거나 선명도를 확인해주세요.")
+            st.markdown("""
+            ---
+            ### ✅ 다음 단계 안내:
+            - PASS 본인인증 페이지 열기
+            - 복사한 정보들을 해당 칸에 붙여넣기
+            - 휴대폰 번호는 직접 입력
+            """)
+        else:
+            st.error("❌ 이름이나 주민등록번호 인식 실패! 사진을 다시 찍거나 선명도를 확인해주세요.")
 
 st.markdown("---")
-st.markdown("""
-💡 만든 사람: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))  
-""")
-
+st.markdown("💡 만든 사람: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))")
