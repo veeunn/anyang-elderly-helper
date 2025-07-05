@@ -48,7 +48,7 @@ if uploaded_file:
 
         with col2:
             st.markdown("""
-            ### ✅ 다음 단계 안내:
+            ### 다음 단계 안내
             - PASS 본인인증 페이지 열기
             - 복사한 정보들을 해당 칸에 붙여넣기
             - 휴대폰 번호는 직접 입력
@@ -58,5 +58,5 @@ if uploaded_file:
 
 st.markdown("---")
 st.markdown("""
-ⓒveeunn)  
+ⓒ veeunn
 """)
