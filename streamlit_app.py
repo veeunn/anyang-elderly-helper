@@ -1,8 +1,7 @@
 import streamlit as st
 from PIL import Image
-import re
 import easyocr
-import numpy as np  # ✅ easyocr가 요구하는 형식으로 변환하기 위해 필요
+import re
 
 st.set_page_config(page_title="행정인턴 어르신 도우미", layout="centered")
 st.title("📋 행정인턴 업무 자동화 어르신 도우미")
@@ -19,44 +18,39 @@ if uploaded_file:
     st.image(image, caption="업로드한 신분증", use_container_width=True)
 
     with st.spinner("🔍 텍스트 인식 중..."):
-        reader = easyocr.Reader(['ko', 'en'])
-        image_np = np.array(image)  # ✅ easyocr가 요구하는 numpy 형식으로 변환
-        result = reader.readtext(image_np)
-
-        # 추출된 텍스트를 줄 단위로 합치기
+        reader = easyocr.Reader(['ko', 'en'], gpu=False)
+        result = reader.readtext(image)
         text = "\n".join([item[1] for item in result])
 
-    # 이름 및 주민번호 패턴 찾기
-    name_match = re.search(r"[가-힣]{2,4}", text)
+    # 이름 추출 개선
+    name_match = re.search(r"주민등록증\s*\n*([가-힣]{2,4})", text) or re.search(r"([가-힣]{2,4})", text)
     resno_match = re.search(r"(\d{6})[- ]?(\d{7})", text)
 
     if name_match and resno_match:
-        name = name_match.group(0)
+        name = name_match.group(1)
         birth = resno_match.group(1)
         gender_code = resno_match.group(2)[0]
 
         col1, col2 = st.columns(2)
         with col1:
             st.success(f"이름: {name}")
-            st.button("📋 이름 복사", on_click=lambda: st.toast(f"복사: {name}"))
+            st.text_input("이름 복사", value=name, label_visibility="collapsed")
 
             st.success(f"생년월일: {birth}")
-            st.button("📋 생년월일 복사", on_click=lambda: st.toast(f"복사: {birth}"))
+            st.text_input("생년월일 복사", value=birth, label_visibility="collapsed")
 
             st.success(f"성별 코드: {gender_code}")
-            st.button("📋 성별코드 복사", on_click=lambda: st.toast(f"복사: {gender_code}"))
+            st.text_input("성별 코드 복사", value=gender_code, label_visibility="collapsed")
 
         with col2:
             st.markdown("""
-            ### 다음 단계 안내
-            - PASS 본인인증 페이지 열기
-            - 복사한 정보들을 해당 칸에 붙여넣기
-            - 휴대폰 번호는 직접 입력
+            ### 👉🏻 다음 단계 안내:
+            - PASS 본인인증 페이지 열기  
+            - 복사한 정보들을 해당 칸에 붙여넣기  
+            - 휴대폰 번호는 직접 입력  
             """)
     else:
         st.error("❌ 정보를 정확히 인식하지 못했어요. 사진이 선명한지 확인해 주세요.")
 
 st.markdown("---")
-st.markdown("""
-ⓒ veeunn
-""")
+st.markdown("💡 만든 사람: 황예은 (GitHub: [@veeunn](https://github.com/veeunn))")
